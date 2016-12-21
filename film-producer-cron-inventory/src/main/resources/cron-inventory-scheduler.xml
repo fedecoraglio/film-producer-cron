@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:batch="http://www.springframework.org/schema/batch"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/batch
+       http://www.springframework.org/schema/batch/spring-batch.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:annotation-config/>
+
+    <context:component-scan base-package="com.film.producer" />
+
+    <bean id="schedulerJobRepository"
+          class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" >
+    </bean>
+
+    <bean id="asyncSchedulerJobLauncher"
+          class="org.springframework.batch.core.launch.support.SimpleJobLauncher" >
+        <property name="jobRepository" ref="schedulerJobRepository"/>
+        <property name="taskExecutor">
+            <bean class="org.springframework.core.task.SimpleAsyncTaskExecutor" />
+        </property>
+    </bean>
+
+    <bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor"/>
+
+    <batch:job id="filmInventoryJob" job-repository="schedulerJobRepository">
+        <batch:step id="shiftConfirmationPendingJobStep">
+            <batch:tasklet task-executor="taskExecutor" throttle-limit="1">
+                <batch:chunk  reader="cronInventoryReader" writer="cronInventoryWriter" commit-interval="1"/>
+            </batch:tasklet>
+        </batch:step>
+    </batch:job>
+</beans>
